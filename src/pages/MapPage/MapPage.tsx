@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { Search, MapPin, Utensils, Coffee, Star } from 'lucide-react';
 import type { LatLngTuple } from 'leaflet';
@@ -63,12 +63,42 @@ function MapUpdater({ center }: { center: LatLngTuple }) {
     return null;
 }
 
+// Component to handle map resizing
+function MapResizer() {
+    const map = useMap();
+    const resizeObserver = useRef<ResizeObserver | null>(null);
+
+    useEffect(() => {
+        // Invalidate size after a short delay to ensure container has dimensions
+        const timer = setTimeout(() => {
+            map.invalidateSize();
+        }, 100);
+
+        // Setup ResizeObserver to handle container size changes
+        const container = map.getContainer();
+        resizeObserver.current = new ResizeObserver(() => {
+            map.invalidateSize();
+        });
+        resizeObserver.current.observe(container);
+
+        return () => {
+            clearTimeout(timer);
+            if (resizeObserver.current) {
+                resizeObserver.current.disconnect();
+            }
+        };
+    }, [map]);
+
+    return null;
+}
+
 function MapPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [mapCenter, setMapCenter] = useState<LatLngTuple>([16.7569, -93.1292]); // Tuxtla Gutiérrez
     const [gastronomicPlaces, setGastronomicPlaces] = useState<GastronomicPlace[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+    const [initialLoad, setInitialLoad] = useState(true);
 
     // Mock data - En producción esto vendría de tu API
     const mockGastronomicPlaces: GastronomicPlace[] = [
@@ -104,6 +134,28 @@ function MapPage() {
             rating: 4.0,
             description: 'Mercado tradicional con gran variedad gastronómica',
             specialties: ['Queso de bola', 'Chorizo chiapaneco', 'Dulces típicos']
+        },
+        {
+            id: '4',
+            name: 'Panadería El Trigal',
+            type: 'panaderia',
+            lat: 16.7575,
+            lng: -93.1275,
+            address: 'Calle Central 123, Tuxtla Gutiérrez',
+            rating: 4.3,
+            description: 'Pan recién horneado todo el día',
+            specialties: ['Pan de elote', 'Conchas', 'Oreja']
+        },
+        {
+            id: '5',
+            name: 'Cafetería Aroma',
+            type: 'cafeteria',
+            lat: 16.7550,
+            lng: -93.1300,
+            address: 'Av. 5 de Mayo 456, Tuxtla Gutiérrez',
+            rating: 4.7,
+            description: 'Café de especialidad de Chiapas',
+            specialties: ['Café de altura', 'Chocolate artesanal', 'Postres']
         }
     ];
 
@@ -141,9 +193,9 @@ function MapPage() {
         setMapCenter(newCenter);
         setSearchResults([]);
         setSearchTerm(result.display_name);
+        setInitialLoad(false);
 
         // Simular búsqueda de lugares gastronómicos cerca del lugar seleccionado
-        // En producción, aquí harías una llamada a tu API para buscar lugares gastronómicos
         setGastronomicPlaces(mockGastronomicPlaces);
     };
 
@@ -174,10 +226,17 @@ function MapPage() {
     useEffect(() => {
         // Cargar lugares gastronómicos iniciales
         setGastronomicPlaces(mockGastronomicPlaces);
+
+        // Simular tiempo de carga inicial
+        const timer = setTimeout(() => {
+            setInitialLoad(false);
+        }, 800);
+
+        return () => clearTimeout(timer);
     }, []);
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="h-full flex flex-col min-h-[500px]">
             {/* Search Section */}
             <div className="bg-white p-6 shadow-sm border-b border-gray-200">
                 <div className="max-w-2xl mx-auto">
@@ -199,6 +258,7 @@ function MapPage() {
                                 {searchResults.map((result) => (
                                     <button
                                         key={result.place_id}
+                                        type="button"
                                         onClick={() => handlePlaceSelect(result)}
                                         className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
                                     >
@@ -219,12 +279,22 @@ function MapPage() {
             </div>
 
             {/* Map Section */}
-            <div className="flex-1 relative">
+            <div className="flex-1 relative min-h-[400px]">
+                {initialLoad ? (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
+                        <div className="text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+                            <p className="mt-3 text-gray-600">Cargando mapa...</p>
+                        </div>
+                    </div>
+                ) : null}
+
                 <MapContainer
                     center={mapCenter}
                     zoom={13}
                     className="h-full w-full"
                     zoomControl={true}
+                    style={{ height: '75vh', width: '100%' }}
                 >
                     <TileLayer
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -232,6 +302,7 @@ function MapPage() {
                     />
 
                     <MapUpdater center={mapCenter} />
+                    <MapResizer />
 
                     {/* Render gastronomic places */}
                     {gastronomicPlaces.map((place) => (
@@ -284,7 +355,7 @@ function MapPage() {
 
                 {/* Loading indicator */}
                 {isLoading && (
-                    <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-3">
+                    <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-3 z-20">
                         <div className="flex items-center space-x-2">
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
                             <span className="text-sm text-gray-600">Buscando...</span>
