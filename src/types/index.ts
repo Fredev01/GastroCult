@@ -19,4 +19,18 @@ export interface SearchResult {
     place_id: string;
 }
 
+export interface Recipes {
+    id?: string;
+    name: string;
+    description: string;
+    ingredients: Ingredient[];
+    instructions: string[];
+    imageUrl?: string;
+    tags?: string[];
+}
+interface Ingredient {
+    name: string;
+    quantity: string;
+}
+
 export type LatLngTuple = [number, number];
