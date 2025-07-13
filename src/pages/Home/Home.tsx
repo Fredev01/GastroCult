@@ -1,16 +1,27 @@
+// pages/Home/Home.tsx
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { searchPlaces } from '../../services/osmApi';
 import SearchBar from '../../components/SearchBar';
 import { searchRecipes } from '../../services/recipeApi';
 import type { Recipes, SearchResult } from '../../types';
 import CardRecipe from '../../components/Recipe/CardRecipe';
 import FeedbackIndicator from '../../components/Recipe/FeedbackIndicator';
+import { useRecipes } from '../../contexts/RecipesContext';
 
 function Home() {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [recipes, setRecipes] = useState<Recipes[]>([]);
+    const navigate = useNavigate();
+    const {
+        recipes,
+        setRecipes,
+        currentLocation,
+        setCurrentLocation,
+        isLoading: isLoadingRecipes,
+        setIsLoading: setIsLoadingRecipes
+    } = useRecipes();
+
+    const [searchTerm, setSearchTerm] = useState(currentLocation);
     const [isLoadingSearch, setIsLoadingSearch] = useState(false);
-    const [isLoadingRecipes, setIsLoadingRecipes] = useState(false);
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
 
     const handleSearch = async (e: React.FormEvent | React.KeyboardEvent) => {
@@ -35,6 +46,7 @@ function Home() {
     const handlePlaceSelect = async (result: SearchResult) => {
         setSearchResults([]);
         setSearchTerm(result.display_name);
+        setCurrentLocation(result.display_name);
         await fetchRecipes(result.display_name);
     };
 
@@ -54,18 +66,24 @@ function Home() {
     };
 
     const handleRecipeClick = (recipe: Recipes) => {
-        // Aquí puedes agregar la lógica para mostrar el detalle de la receta
-        console.log('Recipe clicked:', recipe);
-        // Por ejemplo, navegar a una página de detalle o abrir un modal
+        // Navegar a la página de detalle pasando la receta como state
+        navigate('/recipeDetail', { state: { recipe } });
     };
 
     useEffect(() => {
-        const initializeRecipes = async () => {
-            await fetchRecipes('Tuxtla Gutiérrez, Chiapas');
-        };
+        // Solo cargar recetas si no hay recetas en el contexto
+        if (recipes.length === 0) {
+            const initializeRecipes = async () => {
+                await fetchRecipes(currentLocation);
+            };
+            initializeRecipes();
+        }
+    }, [recipes.length, currentLocation]);
 
-        initializeRecipes();
-    }, []);
+    // Sincronizar searchTerm con currentLocation cuando se regrese de otra página
+    useEffect(() => {
+        setSearchTerm(currentLocation);
+    }, [currentLocation]);
 
     return (
         <div className="h-full flex flex-col min-h-[500px]">
@@ -92,7 +110,7 @@ function Home() {
                             Recetas Disponibles
                         </h2>
                         <p className="text-gray-600">
-                            {searchTerm ? `Recetas de ${searchTerm}` : 'Recetas locales'}
+                            {currentLocation ? `Recetas de ${currentLocation}` : 'Recetas locales'}
                         </p>
                     </div>
 

@@ -26,7 +26,6 @@ export interface Recipes {
     ingredients: Ingredient[];
     instructions: string[];
     imageUrl?: string;
-    tags?: string[];
 }
 interface Ingredient {
     name: string;
