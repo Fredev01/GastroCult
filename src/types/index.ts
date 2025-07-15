@@ -31,5 +31,10 @@ interface Ingredient {
     name: string;
     quantity: string;
 }
+export interface LocationInfo {
+    latitude: number;
+    longitude: number;
+    placeName: string;
+}
 
 export type LatLngTuple = [number, number];

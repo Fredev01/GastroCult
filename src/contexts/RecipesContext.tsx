@@ -27,7 +27,7 @@ interface RecipesProviderProps {
 
 const RecipesProvider: React.FC<RecipesProviderProps> = ({ children }) => {
     const [recipes, setRecipes] = useState<Recipes[]>([]);
-    const [currentLocation, setCurrentLocation] = useState('Tuxtla Gutiérrez, Chiapas');
+    const [currentLocation, setCurrentLocation] = useState<string>('');
     const [isLoading, setIsLoading] = useState(false);
 
     const value = {

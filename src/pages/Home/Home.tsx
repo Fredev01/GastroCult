@@ -1,5 +1,5 @@
 // pages/Home/Home.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { searchPlaces } from '../../services/osmApi';
 import SearchBar from '../../components/SearchBar';
@@ -8,6 +8,7 @@ import type { Recipes, SearchResult } from '../../types';
 import CardRecipe from '../../components/Recipe/CardRecipe';
 import FeedbackIndicator from '../../components/Recipe/FeedbackIndicator';
 import { useRecipes } from '../../contexts/RecipesContext';
+import { getUserLocation } from '../../utils/getLocation';
 
 function Home() {
     const navigate = useNavigate();
@@ -84,6 +85,18 @@ function Home() {
     useEffect(() => {
         setSearchTerm(currentLocation);
     }, [currentLocation]);
+
+    useEffect(() => {
+        // const {} =  await getUserLocation();\
+        if (recipes.length === 0) {
+            const initializeLocation = async () => {
+                const location = await getUserLocation();
+                setCurrentLocation(location.placeName);
+                setSearchTerm(location.placeName);
+            };
+            initializeLocation();
+        }
+    }, [recipes.length]);
 
     return (
         <div className="h-full flex flex-col min-h-[500px]">

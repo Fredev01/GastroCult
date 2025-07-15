@@ -80,8 +80,8 @@ function RecipeDetail() {
                                             <li key={index} className="flex items-start">
                                                 <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
                                                 <div className="flex-1">
+                                                    <span className="text-gray-700 ml-2">{ingredient.name} </span>
                                                     <span className="font-medium text-gray-900">{ingredient.quantity}</span>
-                                                    <span className="text-gray-700 ml-2">{ingredient.name}</span>
                                                 </div>
                                             </li>
                                         ))}
